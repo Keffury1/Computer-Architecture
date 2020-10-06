@@ -5,6 +5,8 @@ LDI = 0b10000010
 PRN = 0b01000111
 HLT = 0b00000001
 MUL = 0b10100010
+PUSH = 0b01000101 
+POP = 0b01000110
 
 class CPU:
 
@@ -12,6 +14,7 @@ class CPU:
         self.ram = [0] * 256
         self.registers = [0] * 8
         self.pc = 0
+        self.sp = 7
         
 
     def ram_read(self, address):
@@ -23,23 +26,28 @@ class CPU:
 
     def load(self):
 
-        address = 0
-
         if (len(sys.argv)) != 2:
             print("Pass in second file name")
             sys.exit()
  
         try:
+            address = 0
             with open(sys.argv[1]) as file:
                 for line in file:
+                    print(line)
                     split = line.split('#')
                     value = split[0].strip()
 
-                    if value == '':
+                    if value == "":
                         continue
                     
-                    number = int(value[0])
-                    self.ram[address] = number
+                    try:
+                        instruction = int(value, 2)
+                    except ValueError:
+                        print("Invalid Number")
+                        sys.exit(1)
+                    
+                    self.ram[address] = instruction
                     address += 1
         except FileNotFoundError:
             print(f'{sys.argv[1]} file not found')
@@ -71,6 +79,8 @@ class CPU:
     def run(self):
         self.running = True
 
+        self.registers[self.sp] = len(self.ram)
+
         while self.running:
             instruction = self.ram_read(self.pc)
 
@@ -89,4 +99,15 @@ class CPU:
             elif instruction == MUL:
                 self.reg[a] = self.reg[a] * self.reg[b]
                 self.pc += 3
-
+            elif instruction == PUSH:
+                register = self.ram[self.pc + 1]
+                value = self.registers[register]
+                self.registers[self.sp] -= 1
+                self.ram[self.registers[self.sp]] = value
+                self.pc += 2
+            elif instruction == POP:
+                register = self.ram[self.pc + 1]
+                value = self.ram[self.registers[self.sp]]
+                self.registers[register] = value
+                self.registers[self.sp] += 1
+                self.pc += 2
