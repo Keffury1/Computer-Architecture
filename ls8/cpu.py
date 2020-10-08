@@ -7,6 +7,8 @@ HLT = 0b00000001
 MUL = 0b10100010
 PUSH = 0b01000101 
 POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
 
 class CPU:
 
@@ -82,7 +84,7 @@ class CPU:
         self.registers[self.sp] = len(self.ram)
 
         while self.running:
-            instruction = self.ram_read(self.pc)
+            instruction = self.ram[self.pc]
 
             a = self.ram_read(self.pc + 1)
             b = self.ram_read(self.pc + 2)
@@ -111,3 +113,14 @@ class CPU:
                 self.registers[register] = value
                 self.registers[self.sp] += 1
                 self.pc += 2
+            elif instruction == CALL:
+                return_address = self.pc + 2
+                register = self.ram[self.pc + 1]
+                subroutine_address = self.registers[register]
+                self.registers[self.sp] -= 1
+                self.ram[self.registers[self.sp]] = return_address
+                self.pc = subroutine_address
+            elif instruction == RET:
+                return_address = self.registers[self.sp]
+                self.pc = self.ram[return_address]
+                self.registers[self.sp] += 1
